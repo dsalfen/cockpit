@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f7f5f0">
-<title>Cockpit</title>
+<title>Vibepad</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -91,7 +91,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 #app { max-width: 540px; margin: 0 auto; padding: 20px 16px 40px; }
 
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 2px; }
-.header-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); letter-spacing: -0.01em; }
+.header-title { display: flex; align-items: center; gap: 9px; }
+.header-wordmark { font-size: 16px; font-weight: 600; color: var(--text-secondary); letter-spacing: -0.01em; }
 .header-actions { display: flex; gap: 6px; }
 .header-btn { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--surface-border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; color: var(--text-muted); }
 .header-btn:hover { border-color: var(--text-faint); color: var(--text-secondary); }
@@ -345,6 +346,7 @@ function moonSvg(){return`<svg viewBox="0 0 16 16" fill="none"><path d="M13.5 9.
 function arrowSvg(){return`<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1 6.5h7M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
 function clockSvg(s=13){return`<svg width="${s}" height="${s}" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="var(--red-text)" stroke-width="1.2"/><path d="M7 4.5V7.5L9 9" stroke="var(--red-text)" stroke-width="1.2" stroke-linecap="round"/></svg>`;}
 function calSvg(){return`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M1 5h10" stroke="currentColor" stroke-width="1.1"/><path d="M4 1v2M8 1v2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>`;}
+function vpLogoSvg(){return`<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vp-g" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#c47a3a"/><stop offset="100%" stop-color="#6b7fa0"/></linearGradient></defs><rect width="28" height="28" rx="7" fill="url(#vp-g)"/><text x="14" y="19.5" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="white" text-anchor="middle" letter-spacing="-0.5">vp</text></svg>`;}
 
 // ── Priority ──
 const PRIORITY_CYCLE = [null, "high", "med", "low"];
@@ -465,10 +467,10 @@ function render() {
   let h = "";
 
   // Header
-  h += `<div class="header"><div class="header-title">Cockpit</div><div class="header-actions"><button class="header-btn" data-action="toggle-theme" title="Toggle dark mode">${theme==="dark"?sunSvg():moonSvg()}</button></div></div>`;
+  h += `<div class="header"><div class="header-title">${vpLogoSvg()}<span class="header-wordmark">Vibepad</span></div><div class="header-actions"><button class="header-btn" data-action="toggle-theme" title="Toggle dark mode">${theme==="dark"?sunSvg():moonSvg()}</button></div></div>`;
 
   // Quick capture
-  h += `<div class="capture-zone"><input class="capture-input" data-role="capture-input" placeholder="Quick capture — type and press Enter — or press I anytime" autocomplete="off">`;
+  h += `<div class="capture-zone"><input class="capture-input" data-role="capture-input" placeholder="Quick capture — type and press Enter, or press I" autocomplete="off">`;
   if (inbox.length > 0) {
     h += `<div class="inbox-list">`;
     inbox.forEach(item => {
@@ -663,7 +665,7 @@ function render() {
 
   h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button></div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
-  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/cockpit" target="_blank" rel="noopener">dsalfen/cockpit</a><span class="footer-version">v0.1.0-beta.1</span></div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/cockpit" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.1.0-beta.1</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
