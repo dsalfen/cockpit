@@ -2,7 +2,7 @@
 
 A minimal, offline-first task manager built as a single-file PWA. No framework, no build step, no backend — just HTML, CSS, and vanilla JS stored in your browser.
 
-**[→ Open Vibepad](https://dsalfen.github.io/cockpit)**
+**[→ Open Vibepad](https://dsalfen.github.io/vibepad)**
 
 ---
 
