@@ -1,4 +1,4 @@
-const CACHE_NAME = "cockpit-v1";
+const CACHE_NAME = "vibepad-v1";
 const ASSETS = ["./index.html", "./manifest.json"];
 
 self.addEventListener("install", (e) => {
