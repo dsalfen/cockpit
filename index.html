@@ -248,6 +248,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .data-btn:hover { color: var(--text-muted); background: var(--surface); }
 
 .kbd-hint { font-size: 10px; color: var(--text-ghost); font-family: 'DM Mono', monospace; text-align: center; margin-top: 12px; letter-spacing: 0.04em; }
+.app-footer { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; }
+.footer-link { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-ghost); text-decoration: none; letter-spacing: 0.04em; transition: color 0.15s; }
+.footer-link:hover { color: var(--text-muted); }
+.footer-version { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-ghost); letter-spacing: 0.06em; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--surface-border); }
 </style>
 </head>
 <body>
@@ -659,6 +663,7 @@ function render() {
 
   h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button></div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/cockpit" target="_blank" rel="noopener">dsalfen/cockpit</a><span class="footer-version">v0.1.0-beta.1</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
