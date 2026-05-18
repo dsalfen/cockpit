@@ -665,7 +665,7 @@ function render() {
 
   h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button></div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
-  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/cockpit" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.1.0-beta.1</span></div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.1.0-beta.1</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
