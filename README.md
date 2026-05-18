@@ -1,53 +1,55 @@
-# Cockpit
+# vp Vibepad
 
-Minimal task management for focused work. Designed to be ADD-friendly — low friction, high visibility.
+A minimal, offline-first task manager built as a single-file PWA. No framework, no build step, no backend — just HTML, CSS, and vanilla JS stored in your browser.
+
+**[→ Open Vibepad](https://dsalfen.github.io/cockpit)**
+
+---
 
 ## Features
 
-- **Flagged for Follow-up** — flag any task or subtask to keep it visible; add timestamped notes without closing it
-- **Projects with subtasks** — break work into steps; progress tracked automatically
-- **Notes on everything** — timestamped audit trail on any task, flagged or not
-- **Dark mode** — toggle with one click; preference persists
-- **Offline-capable** — works without internet after first load
-- **Data stays local** — everything in your browser's localStorage; export/import JSON backups
+- **Quick capture** — press `I` anywhere to drop a thought into the inbox, then triage it later
+- **Projects & tasks** — organize work into projects with subtasks, or keep standalone tasks
+- **Priority levels** — click the dot on any item to cycle through high / med / low
+- **Due dates** — set deadlines; overdue items surface automatically in the flagged zone
+- **Flagged & overdue zone** — a focused view of what needs attention now
+- **Drag to reorder** — reorder tasks and subtasks, move tasks into projects, or pull subtasks out
+- **Notes** — add timestamped notes to any task, subtask, or flagged item
+- **Archive** — completed tasks and closed projects collected in a single dropdown, newest first
+- **Dark mode** — toggle in the header
+- **Keyboard shortcuts** — `i` capture · `t` add task · `p` add project
+- **Export / import** — back up and restore your data as JSON
+- **Installable PWA** — add to home screen on iOS or Android; works fully offline
 
-## Install as an App
+## Stack
 
-### From GitHub Pages (recommended)
+| Concern | Approach |
+|---|---|
+| UI | String-rendered HTML, event delegation |
+| State | `localStorage` |
+| Offline | Service worker with stale-while-revalidate |
+| Fonts | DM Sans + DM Mono via Google Fonts |
+| Hosting | GitHub Pages |
 
-1. Visit your deployed URL: `https://YOUR_USERNAME.github.io/cockpit/`
-2. In **Edge**: click the install icon in the address bar (monitor with down arrow), or go to `⋯` menu → Apps → Install this site as an app
-3. In **Chrome**: click the install icon in the address bar, or go to `⋮` menu → Save and share → Install page as app
+## Local development
 
-This gives you a standalone window, a taskbar/dock icon, and offline support.
+A PowerShell dev server is included:
 
-### From a local file
+```powershell
+cd cockpit
+powershell -ExecutionPolicy Bypass -File serve.ps1
+# → http://localhost:8765
+```
 
-If running from a local `file://` path, Edge/Chrome won't offer the install prompt. Use:
-- Edge: `⋯` → More tools → Pin to taskbar
-- Or: `⋯` → More tools → Create shortcut → check "Open as window"
+After editing `index.html`, clear the service worker cache in the browser console to see changes immediately:
 
-## Deploy to GitHub Pages
+```javascript
+(async()=>{const k=await caches.keys();await Promise.all(k.map(c=>caches.delete(c)));const r=await navigator.serviceWorker.getRegistrations();await Promise.all(r.map(x=>x.unregister()));location.reload()})()
+```
 
-1. **Create a new repository** on github.com (e.g., `cockpit`)
-2. **Upload these files** to the repo root:
-   - `index.html`
-   - `manifest.json`
-   - `sw.js`
-   - `icon-192.png`
-   - `icon-512.png`
-3. **Enable GitHub Pages**: go to repo Settings → Pages → Source: "Deploy from a branch" → Branch: `main` → Folder: `/ (root)` → Save
-4. Wait 1-2 minutes, then visit `https://YOUR_USERNAME.github.io/cockpit/`
+## Deployment
 
-That's it. No build step, no dependencies, no server.
-
-## Data
-
-All task data lives in `localStorage` in your browser. It survives browser restarts and system reboots. It does **not** sync across devices or browsers.
-
-- **Export**: click "export" at the bottom of the app to download a JSON backup
-- **Import**: click "import" to restore from a backup file
-- **Risk**: clearing browser data or cookies will erase your tasks — keep backups
+Only `index.html` needs to be updated for a new release. All other files (`manifest.json`, `sw.js`, icons) are static.
 
 ## Files
 
@@ -56,5 +58,9 @@ All task data lives in `localStorage` in your browser. It survives browser resta
 | `index.html` | The entire app — HTML, CSS, and JS in one file |
 | `manifest.json` | PWA manifest — tells browsers the app is installable |
 | `sw.js` | Service worker — enables offline use and caching |
-| `icon-192.png` | App icon (192×192) |
-| `icon-512.png` | App icon (512×512) |
+| `icon-192.png` | App icon |
+| `serve.ps1` | Local dev server (not needed for deployment) |
+
+## Version
+
+`v0.1.0-beta.1`
