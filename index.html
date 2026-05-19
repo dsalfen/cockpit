@@ -247,6 +247,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .data-bar { display: flex; gap: 6px; margin-top: 24px; justify-content: center; }
 .data-btn { font-size: 10px; color: var(--text-ghost); cursor: pointer; border: none; background: none; font-family: 'DM Mono', monospace; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 6px; transition: all 0.15s; }
 .data-btn:hover { color: var(--text-muted); background: var(--surface); }
+.data-btn-warn { color: var(--amber) !important; }
+.data-sync-on { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--green-text); letter-spacing: 0.05em; padding: 4px 8px; }
 
 .kbd-hint { font-size: 10px; color: var(--text-ghost); font-family: 'DM Mono', monospace; text-align: center; margin-top: 12px; letter-spacing: 0.04em; }
 .app-footer { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; }
@@ -297,7 +299,41 @@ function loadState() {
   return getDefault();
 }
 
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+let fileHandle = null;
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (fileHandle) writeToFile(fileHandle, state).catch(() => {});
+}
+
+const IDB_NAME = "vibepad_db", IDB_STORE = "handles";
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function getStoredHandle() {
+  try { const db = await openDB(); return await new Promise(res => { const r = db.transaction(IDB_STORE).objectStore(IDB_STORE).get("fh"); r.onsuccess = () => res(r.result||null); r.onerror = () => res(null); }); } catch { return null; }
+}
+async function putStoredHandle(h) {
+  try { const db = await openDB(); await new Promise((res,rej) => { const tx = db.transaction(IDB_STORE,"readwrite"); tx.objectStore(IDB_STORE).put(h,"fh"); tx.oncomplete=res; tx.onerror=rej; }); } catch {}
+}
+async function clearStoredHandle() {
+  try { const db = await openDB(); await new Promise((res,rej) => { const tx = db.transaction(IDB_STORE,"readwrite"); tx.objectStore(IDB_STORE).delete("fh"); tx.oncomplete=res; tx.onerror=rej; }); } catch {}
+}
+
+async function readFromFile(handle) {
+  const file = await handle.getFile();
+  return JSON.parse(await file.text());
+}
+async function writeToFile(handle, data) {
+  const w = await handle.createWritable();
+  await w.write(JSON.stringify(data, null, 2));
+  await w.close();
+}
 function loadTheme() { return localStorage.getItem(THEME_KEY) || "light"; }
 function saveTheme(t) {
   localStorage.setItem(THEME_KEY, t);
@@ -314,7 +350,8 @@ let ui = {
   showCompleted: false, showProjectCompleted: {}, showClosedProj: false,
   expandedClosedProj: {}, pendingDelete: null,
   editingDue: null,
-  dragId: null, dragType: null, dragPid: null
+  dragId: null, dragType: null, dragPid: null,
+  fileSyncState: null
 };
 
 // ── Helpers ──
@@ -663,9 +700,19 @@ function render() {
     h += `<div class="add-bar"><button class="add-btn" data-action="start-add" data-type="task">+ Task</button><button class="add-btn" data-action="start-add" data-type="project">+ Project</button></div>`;
   }
 
-  h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button></div>`;
+  let fileSyncBtn = "";
+  if (window.showOpenFilePicker) {
+    if (fileHandle) {
+      fileSyncBtn = `<span class="data-sync-on">● file sync</span><button class="data-btn" data-action="file-disconnect">disconnect</button>`;
+    } else if (ui.fileSyncState === "needs-permission") {
+      fileSyncBtn = `<button class="data-btn data-btn-warn" data-action="file-reconnect">reconnect file</button>`;
+    } else {
+      fileSyncBtn = `<button class="data-btn" data-action="file-connect">sync to file</button>`;
+    }
+  }
+  h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button>${fileSyncBtn}</div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
-  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/cockpit" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.1.0-beta.1</span></div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.2.0-beta.1</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
@@ -746,12 +793,53 @@ document.getElementById("app").addEventListener("click", e => {
     }
     case "export-data": {
       const b=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
-      const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download="cockpit-backup.json"; a.click(); URL.revokeObjectURL(u); break;
+      const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download="vibepad.json"; a.click(); URL.revokeObjectURL(u); break;
     }
     case "import-data": {
       const inp=document.createElement("input"); inp.type="file"; inp.accept=".json";
       inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();render();}catch(e){alert("Invalid file");}};r.readAsText(f);};
       inp.click(); break;
+    }
+    case "file-connect": {
+      (async () => {
+        try {
+          const [handle] = await window.showOpenFilePicker({ types: [{ description: "Vibepad data", accept: { "application/json": [".json"] } }], multiple: false });
+          let existing = null;
+          try { existing = await readFromFile(handle); } catch {}
+          if (existing && Array.isArray(existing.tasks)) {
+            existing.tasks.forEach(t => { migrateItem(t); (t.subtasks||[]).forEach(migrateItem); });
+            state = existing;
+          }
+          fileHandle = handle;
+          await putStoredHandle(handle);
+          save();
+          render();
+        } catch {}
+      })(); break;
+    }
+    case "file-disconnect": {
+      fileHandle = null;
+      ui.fileSyncState = null;
+      clearStoredHandle();
+      render(); break;
+    }
+    case "file-reconnect": {
+      (async () => {
+        const handle = await getStoredHandle();
+        if (!handle) { ui.fileSyncState = null; render(); return; }
+        const perm = await handle.requestPermission({ mode: "readwrite" });
+        if (perm === "granted") {
+          try {
+            const s = await readFromFile(handle);
+            s.tasks.forEach(t => { migrateItem(t); (t.subtasks||[]).forEach(migrateItem); });
+            state = s;
+            fileHandle = handle;
+            ui.fileSyncState = null;
+            save();
+          } catch {}
+        }
+        render();
+      })(); break;
     }
   }
 });
@@ -875,6 +963,24 @@ document.getElementById("app").addEventListener("drop", e => {
   }
   render();
 });
+
+(async function initFileSync() {
+  if (!window.showOpenFilePicker) return;
+  const handle = await getStoredHandle();
+  if (!handle) return;
+  const perm = await handle.queryPermission({ mode: "readwrite" });
+  if (perm === "granted") {
+    try {
+      const s = await readFromFile(handle);
+      s.tasks.forEach(t => { migrateItem(t); (t.subtasks||[]).forEach(migrateItem); });
+      state = s;
+      fileHandle = handle;
+    } catch {}
+  } else {
+    ui.fileSyncState = "needs-permission";
+  }
+  render();
+})();
 
 render();
 </script>

@@ -63,4 +63,4 @@ Only `index.html` needs to be updated for a new release. All other files (`manif
 
 ## Version
 
-`v0.1.0-beta.1`
+`v0.2.0-beta.1`
