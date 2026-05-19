@@ -876,6 +876,16 @@ document.getElementById("app").addEventListener("drop", e => {
   render();
 });
 
+// Handle ?capture= URL param sent by the Vibepad Capture browser extension
+(function() {
+  const text = new URLSearchParams(location.search).get("capture");
+  if (text && text.trim()) {
+    state.tasks.push({ id: gid(), type: "inbox", title: text.trim() });
+    save();
+    history.replaceState(null, "", location.pathname);
+  }
+})();
+
 render();
 </script>
 </body>
