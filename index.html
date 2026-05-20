@@ -227,6 +227,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .task-row:hover .due-add-btn, .subtask-row:hover .due-add-btn { color: var(--icon-inactive); border-color: var(--input-border); }
 .due-add-btn:hover { color: var(--text-muted) !important; background: var(--tag-bg) !important; }
 
+/* === Aging badge === */
+.age-badge { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 5px; flex-shrink: 0; white-space: nowrap; }
+.age-fresh { color: var(--green-text); background: var(--green-bg); }
+.age-aging { color: var(--amber); background: var(--amber-bg); border: 1px solid var(--amber-border); }
+.age-stale { color: var(--red-text); background: var(--red-bg); border: 1px solid var(--red-border); }
+
 /* === Archive === */
 .archive-toggle-btn { font-size: 11px; color: var(--text-faint); cursor: pointer; border: none; background: none; font-family: 'DM Mono', monospace; letter-spacing: 0.04em; padding: 6px 0 2px; display: block; }
 .archive-toggle-btn:hover { color: var(--text-muted); }
@@ -295,6 +301,7 @@ function migrateItem(item) {
   if (!("due" in item)) item.due = null;
   if (!("notes" in item)) item.notes = [];
   if (!("flagged" in item)) item.flagged = false;
+  if (!("lastTouched" in item)) item.lastTouched = Date.now();
   return item;
 }
 
@@ -379,6 +386,22 @@ function gid() { return "id_"+Date.now()+"_"+Math.random().toString(36).substr(2
 function esc(s) { const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
 function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+function agingBadge(lastTouched) {
+  if (!lastTouched) return '';
+  const ms = Date.now() - lastTouched;
+  const mins = Math.floor(ms / 60000);
+  const hours = ms / 3600000;
+  const days = hours / 24;
+  let label, cls;
+  if (mins < 60) { label = Math.max(1, mins) + 'm'; cls = 'age-fresh'; }
+  else if (hours < 24) { label = Math.floor(hours) + 'h'; cls = 'age-fresh'; }
+  else if (days < 3) { label = Math.floor(days) + 'd'; cls = 'age-aging'; }
+  else if (days < 7) { label = Math.floor(days) + 'd'; cls = 'age-stale'; }
+  else if (days < 30) { label = Math.floor(days / 7) + 'w'; cls = 'age-stale'; }
+  else { label = Math.floor(days / 30) + 'mo'; cls = 'age-stale'; }
+  return `<span class="age-badge ${cls}" title="Last touched ${label} ago">${label}</span>`;
+}
+
 function editableSpan(text, id, cls, fontSize) {
   if (ui.editingItemId === id) return `<input class="edit-inline" data-role="edit-title" data-eid="${id}" value="${escAttr(text)}" style="font-size:${fontSize||14}px" autofocus>`;
   return `<span class="${cls}" data-action="start-edit-title" data-eid="${id}">${esc(text)}</span>`;
@@ -392,8 +415,8 @@ function saveEditTitle(el) {
   const eid=el.dataset.eid, val=el.value.trim();
   if(val){
     let found=findTask(eid);
-    if(found){found.title=val;}
-    else{for(const t of state.tasks){if(t.subtasks){const s=t.subtasks.find(s=>s.id===eid);if(s){s.title=val;break;}}}}
+    if(found){found.title=val;found.lastTouched=Date.now();}
+    else{for(const t of state.tasks){if(t.subtasks){const s=t.subtasks.find(s=>s.id===eid);if(s){s.title=val;s.lastTouched=Date.now();break;}}}}
     save();
   }
   ui.editingItemId=null; render();
@@ -402,7 +425,15 @@ function saveEditNote(el) {
   const nid=el.dataset.enid, idx=parseInt(el.dataset.enidx), val=el.value.trim();
   if(val){
     const r=resolveNid(nid);
-    if(r){const notes=getItemNotes(r.tid,r.sid);if(notes[idx]){notes[idx].text=val;notes[idx].ts=now()+" (edited)";save();}}
+    if(r){
+      const notes=getItemNotes(r.tid,r.sid);
+      if(notes[idx]){
+        notes[idx].text=val;notes[idx].ts=now()+" (edited)";
+        if(r.sid){const s=findSubtask(r.tid,r.sid);if(s)s.lastTouched=Date.now();}
+        else{const t=findTask(r.tid);if(t)t.lastTouched=Date.now();}
+        save();
+      }
+    }
   }
   ui.editingNoteKey=null; render();
 }
@@ -483,9 +514,9 @@ function getActiveCount() { return state.tasks.filter(t => t.type==="task" ? !t.
 function findTask(id) { return state.tasks.find(t => t.id===id); }
 function findSubtask(tid,sid) { const t=findTask(tid); return t ? (t.subtasks||[]).find(s=>s.id===sid) : null; }
 function getItemNotes(tid,sid) { if(sid){const s=findSubtask(tid,sid);return s?(s.notes||[]):[]} const t=findTask(tid);return t?(t.notes||[]): []; }
-function addNote(tid,sid,text) { const n={text:text||"Acknowledged",ts:now()}; if(sid){const s=findSubtask(tid,sid);if(s){s.notes=s.notes||[];s.notes.push(n);}}else{const t=findTask(tid);if(t){t.notes=t.notes||[];t.notes.push(n);}} save(); }
+function addNote(tid,sid,text) { const n={text:text||"Acknowledged",ts:now()}; if(sid){const s=findSubtask(tid,sid);if(s){s.notes=s.notes||[];s.notes.push(n);s.lastTouched=Date.now();}}else{const t=findTask(tid);if(t){t.notes=t.notes||[];t.notes.push(n);t.lastTouched=Date.now();}} save(); }
 function toggleDone(tid,sid) { if(sid){const s=findSubtask(tid,sid);if(s){s.done=!s.done;if(s.done)s.doneAt=Date.now();else delete s.doneAt;}}else{const t=findTask(tid);if(t){t.done=!t.done;if(t.done)t.doneAt=Date.now();else delete t.doneAt;}} save(); }
-function toggleFlag(tid,sid) { if(sid){const s=findSubtask(tid,sid);if(s)s.flagged=!s.flagged;}else{const t=findTask(tid);if(t)t.flagged=!t.flagged;} save(); }
+function toggleFlag(tid,sid) { if(sid){const s=findSubtask(tid,sid);if(s){s.flagged=!s.flagged;if(s.flagged)s.lastTouched=Date.now();}}else{const t=findTask(tid);if(t){t.flagged=!t.flagged;if(t.flagged)t.lastTouched=Date.now();}} save(); }
 
 // ── Delete helpers ──
 function rmBtn(key) {
@@ -588,6 +619,7 @@ function render() {
       if (item.parentTitle) h += `<div class="flag-item-parent">${esc(item.parentTitle)}</div>`;
       if (item.due) { const f=fmtDue(item.due); h += `<div style="font-family:'DM Mono',monospace;font-size:9px;margin-top:2px;color:var(--red-text)">${esc(f.label)}</div>`; }
       h += `</div>`;
+      h += agingBadge(item.lastTouched);
       h += `<button class="flag-btn flag-btn-ack" data-action="start-note" data-nid="${nid}">${arrowSvg()} Note</button>`;
       h += `<button class="flag-btn flag-btn-done" data-action="complete" data-tid="${tid}" data-sid="${sid||""}" title="Complete">${checkSvg(10)}</button>`;
       if (!item.overdue || item.flagged) h += `<button class="flag-btn flag-btn-unflag" data-action="unflag" data-tid="${tid}" data-sid="${sid||""}" title="Unflag"><span style="font-size:11px">✕</span></button>`;
@@ -760,7 +792,7 @@ function render() {
   }
   h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button>${fileSyncBtn}</div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
-  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.3.0</span></div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.3.1</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
