@@ -388,17 +388,12 @@ function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').repl
 
 function agingBadge(lastTouched) {
   if (!lastTouched) return '';
-  const ms = Date.now() - lastTouched;
-  const mins = Math.floor(ms / 60000);
-  const hours = ms / 3600000;
-  const days = hours / 24;
-  let label, cls;
-  if (mins < 60) { label = Math.max(1, mins) + 'm'; cls = 'age-fresh'; }
-  else if (hours < 24) { label = Math.floor(hours) + 'h'; cls = 'age-fresh'; }
-  else if (days < 3) { label = Math.floor(days) + 'd'; cls = 'age-aging'; }
-  else if (days < 7) { label = Math.floor(days) + 'd'; cls = 'age-stale'; }
-  else if (days < 30) { label = Math.floor(days / 7) + 'w'; cls = 'age-stale'; }
-  else { label = Math.floor(days / 30) + 'mo'; cls = 'age-stale'; }
+  const days = Math.floor((Date.now() - lastTouched) / 86400000);
+  let cls;
+  if (days < 1) cls = 'age-fresh';
+  else if (days < 3) cls = 'age-aging';
+  else cls = 'age-stale';
+  const label = days < 1 ? '<1d' : days + 'd';
   return `<span class="age-badge ${cls}" title="Last touched ${label} ago">${label}</span>`;
 }
 
@@ -508,6 +503,7 @@ function getFlagged() {
       });
     }
   });
+  r.sort((a, b) => (a.lastTouched || 0) - (b.lastTouched || 0));
   return r;
 }
 function getActiveCount() { return state.tasks.filter(t => t.type==="task" ? !t.done : t.type==="project" ? (t.subtasks||[]).some(s=>!s.done) : false).length; }
@@ -792,7 +788,7 @@ function render() {
   }
   h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button>${fileSyncBtn}</div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
-  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.3.1</span></div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.3.2</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
@@ -1076,6 +1072,13 @@ document.getElementById("app").addEventListener("drop", e => {
 })();
 
 render();
+
+// ── Periodic re-render for aging badges (every 10 min, skip if editing) ──
+setInterval(() => {
+  if (ui.editingItemId || ui.editingNoteKey || ui.notingId || ui.editingDue || ui.addMode || ui.addingSubTo) return;
+  if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "SELECT") return;
+  render();
+}, 600000);
 </script>
 </body>
 </html>
