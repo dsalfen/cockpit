@@ -52,36 +52,36 @@
 [data-theme="dark"] {
   --bg: linear-gradient(180deg, #1a1917 0%, #141312 100%);
   --surface: #242220;
-  --surface-border: #3a3835;
+  --surface-border: #4a4745;
   --surface-hover: #2e2c29;
-  --text: #e8e3da;
-  --text-secondary: #b8ae9e;
-  --text-muted: #8a8070;
-  --text-faint: #6b6258;
-  --text-ghost: #4e4840;
-  --divider: #33302c;
-  --green: #7a9e7e;
+  --text: #ebe7df;
+  --text-secondary: #c4b8a8;
+  --text-muted: #9a9088;
+  --text-faint: #7d7368;
+  --text-ghost: #5e5850;
+  --divider: #3d3a36;
+  --green: #88b08c;
   --green-bg: #1e2e1f;
-  --green-text: #a0c4a3;
-  --amber: #d4923a;
+  --green-text: #a8cca8;
+  --amber: #dca040;
   --amber-light: #e8a95b;
   --amber-bg: #2e2518;
-  --amber-border: #4a3820;
-  --blue: #8a9ec0;
+  --amber-border: #5a4828;
+  --blue: #9aaed0;
   --blue-bg: #1e2430;
-  --blue-border: #3a4560;
+  --blue-border: #4a5570;
   --blue-input-bg: #1e2430;
-  --blue-text: #a0b4d0;
-  --red-border: #6a3e3e;
+  --blue-text: #b0c4e0;
+  --red-border: #7a4e4e;
   --red-bg: #2e1e1e;
-  --red-text: #d4a0a0;
+  --red-text: #e0b0b0;
   --proj-bg: #1e2430;
-  --proj-text: #8a9ec0;
+  --proj-text: #9aaed0;
   --input-bg: #2e2c29;
-  --input-border: #4a4540;
-  --icon-inactive: #5a5550;
-  --tag-bg: #33302c;
-  --tag-text: #8a8070;
+  --input-border: #5a5550;
+  --icon-inactive: #6a6560;
+  --tag-bg: #3a3733;
+  --tag-text: #9a9088;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.3);
 }
@@ -154,6 +154,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .note-submit { padding: 7px 12px; border-radius: 8px; border: none; background: var(--blue); color: white; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; font-weight: 500; }
 .note-submit:hover { filter: brightness(0.9); }
 .note-cancel { padding: 7px 8px; border-radius: 8px; border: 1.5px solid var(--input-border); background: transparent; color: var(--text-muted); font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+/* === Inline editing === */
+.edit-inline { flex: 1; min-width: 0; padding: 2px 6px; border-radius: 6px; border: 1.5px solid var(--blue-border); font-family: 'DM Sans', sans-serif; font-size: inherit; outline: none; background: var(--blue-input-bg); color: var(--text); }
+.edit-inline:focus { border-color: var(--blue); }
+.task-name:not(.checked) { cursor: text; border-radius: 4px; padding: 1px 3px; margin: -1px -3px; transition: background 0.15s; }
+.task-name:not(.checked):hover { background: var(--surface-hover); }
+.sub-label:not(.checked) { cursor: text; border-radius: 4px; padding: 1px 3px; margin: -1px -3px; transition: background 0.15s; }
+.sub-label:not(.checked):hover { background: var(--surface-hover); }
+.inbox-title { cursor: text; border-radius: 4px; padding: 1px 3px; margin: -1px -3px; transition: background 0.15s; }
+.inbox-title:hover { background: var(--surface-hover); }
+.note-text { cursor: text; border-radius: 3px; padding: 0 2px; margin: 0 -2px; transition: background 0.15s; }
+.note-text:hover { background: var(--surface-hover); }
+.note-history-text { cursor: text; border-radius: 3px; padding: 0 2px; margin: 0 -2px; transition: background 0.15s; }
+.note-history-text:hover { background: var(--surface-hover); }
 
 /* === Task list === */
 .tasklist-zone { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-sm); border: 1px solid var(--surface-border); overflow: hidden; }
@@ -349,7 +363,7 @@ let ui = {
   expandedNotes: {}, openNotes: {}, addingSubTo: null,
   showCompleted: false, showProjectCompleted: {}, showClosedProj: false,
   expandedClosedProj: {}, pendingDelete: null,
-  editingDue: null,
+  editingDue: null, editingItemId: null, editingNoteKey: null,
   dragId: null, dragType: null, dragPid: null,
   fileSyncState: null
 };
@@ -363,6 +377,35 @@ function now() {
 }
 function gid() { return "id_"+Date.now()+"_"+Math.random().toString(36).substr(2,5); }
 function esc(s) { const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function editableSpan(text, id, cls, fontSize) {
+  if (ui.editingItemId === id) return `<input class="edit-inline" data-role="edit-title" data-eid="${id}" value="${escAttr(text)}" style="font-size:${fontSize||14}px" autofocus>`;
+  return `<span class="${cls}" data-action="start-edit-title" data-eid="${id}">${esc(text)}</span>`;
+}
+function editableNote(text, nid, idx, cls, fontSize) {
+  const key = `${nid}:${idx}`;
+  if (ui.editingNoteKey === key) return `<input class="edit-inline" data-role="edit-note" data-enid="${nid}" data-enidx="${idx}" value="${escAttr(text)}" style="font-size:${fontSize||12}px" autofocus>`;
+  return `<span class="${cls}" data-action="start-edit-note" data-enid="${nid}" data-enidx="${idx}">${esc(text)}</span>`;
+}
+function saveEditTitle(el) {
+  const eid=el.dataset.eid, val=el.value.trim();
+  if(val){
+    let found=findTask(eid);
+    if(found){found.title=val;}
+    else{for(const t of state.tasks){if(t.subtasks){const s=t.subtasks.find(s=>s.id===eid);if(s){s.title=val;break;}}}}
+    save();
+  }
+  ui.editingItemId=null; render();
+}
+function saveEditNote(el) {
+  const nid=el.dataset.enid, idx=parseInt(el.dataset.enidx), val=el.value.trim();
+  if(val){
+    const r=resolveNid(nid);
+    if(r){const notes=getItemNotes(r.tid,r.sid);if(notes[idx]){notes[idx].text=val;notes[idx].ts=now()+" (edited)";save();}}
+  }
+  ui.editingNoteKey=null; render();
+}
 
 function fmtDue(due) {
   if (!due) return null;
@@ -462,7 +505,7 @@ function renderNotes(notes, nid, isAdding) {
   let h = `<div class="notes-panel">`;
   if (notes.length > 0) {
     const lastIdx=notes.length-1, last=notes[lastIdx], older=notes.slice(0,-1), exp=ui.expandedNotes[nid];
-    h += `<div class="note-last" ${older.length>0?`data-action="toggle-expand" data-nid="${nid}"`:""}><span class="note-ts">${esc(last.ts)}</span><span class="note-text">${esc(last.text)}</span>`;
+    h += `<div class="note-last" ${older.length>0?`data-action="toggle-expand" data-nid="${nid}"`:""}><span class="note-ts">${esc(last.ts)}</span>${editableNote(last.text, nid, lastIdx, 'note-text', 12)}`;
     if (older.length > 0) h += `<span class="note-expand-text">${exp?"▴":"+"+older.length}</span>`;
     h += noteDelBtn(nid, lastIdx);
     h += `</div>`;
@@ -470,7 +513,7 @@ function renderNotes(notes, nid, isAdding) {
       h += `<div class="note-history">`;
       [...older].reverse().forEach((n, ri) => {
         const idx = older.length - 1 - ri;
-        h += `<div class="note-history-item"><span class="note-ts">${esc(n.ts)}</span><span class="note-history-text">${esc(n.text)}</span>${noteDelBtn(nid, idx)}</div>`;
+        h += `<div class="note-history-item"><span class="note-ts">${esc(n.ts)}</span>${editableNote(n.text, nid, idx, 'note-history-text', 11)}${noteDelBtn(nid, idx)}</div>`;
       });
       h += `</div>`;
     }
@@ -511,7 +554,7 @@ function render() {
   if (inbox.length > 0) {
     h += `<div class="inbox-list">`;
     inbox.forEach(item => {
-      h += `<div class="inbox-item"><span class="inbox-title">${esc(item.title)}</span>`;
+      h += `<div class="inbox-item">${editableSpan(item.title, item.id, 'inbox-title', 13)}`;
       h += `<button class="inbox-btn" data-action="inbox-to-task" data-iid="${item.id}">→ Task</button>`;
       if (projects.length > 0) {
         h += `<select class="inbox-proj-select" data-role="inbox-proj-select" data-iid="${item.id}"><option value="">→ Project</option>`;
@@ -536,7 +579,12 @@ function render() {
       const overdueClass = item.overdue ? " overdue-item" : "";
       h += `<div class="flag-item${overdueClass}"><div class="flag-item-top">`;
       h += item.overdue ? clockSvg(14) : flagSvg(true,14);
-      h += `<div class="flag-item-info"><div class="flag-item-text">${esc(item.title)}</div>`;
+      h += `<div class="flag-item-info">`;
+      if (ui.editingItemId === item.id) {
+        h += `<input class="edit-inline" data-role="edit-title" data-eid="${item.id}" value="${escAttr(item.title)}" style="font-size:13px;font-weight:500" autofocus>`;
+      } else {
+        h += `<div class="flag-item-text" data-action="start-edit-title" data-eid="${item.id}" style="cursor:text">${esc(item.title)}</div>`;
+      }
       if (item.parentTitle) h += `<div class="flag-item-parent">${esc(item.parentTitle)}</div>`;
       if (item.due) { const f=fmtDue(item.due); h += `<div style="font-family:'DM Mono',monospace;font-size:9px;margin-top:2px;color:var(--red-text)">${esc(f.label)}</div>`; }
       h += `</div>`;
@@ -567,7 +615,7 @@ function render() {
         const showArchive=ui.showProjectCompleted[pr.id];
         h += `<div class="task-row" draggable="true" data-drag-id="${pr.id}" data-drag-type="task" data-item-type="project">`;
         h += `<span class="type-tag tag-proj">proj</span>`;
-        h += `<span class="task-name">${esc(pr.title)}</span>`;
+        h += editableSpan(pr.title, pr.id, 'task-name', 14);
         h += duePart(pr, pr.id, null);
         h += priorityDot(pr.priority, pr.id, null);
         h += `<span class="proj-progress">${doneSubs.length}/${subs.length}</span>`;
@@ -578,7 +626,7 @@ function render() {
           const sn=sub.notes||[], snid="list-"+sub.id, isO=ui.openNotes[sub.id];
           h += `<div><div class="subtask-row" draggable="true" data-drag-id="${sub.id}" data-drag-type="subtask" data-drag-pid="${pr.id}">`;
           h += `<div class="sub-check${sub.done?" checked":""}" data-action="toggle-done" data-tid="${pr.id}" data-sid="${sub.id}">${sub.done?checkSvg(8):""}</div>`;
-          h += `<span class="sub-label">${esc(sub.title)}</span>`;
+          h += editableSpan(sub.title, sub.id, 'sub-label', 13);
           h += duePart(sub, pr.id, sub.id);
           h += priorityDot(sub.priority, pr.id, sub.id);
           h += `<button class="icon-btn" data-action="toggle-notes-panel" data-sid="${sub.id}">${noteSvg(sn.length,13)}</button>`;
@@ -620,7 +668,7 @@ function render() {
         const tn=task.notes||[], tnid="list-"+task.id, isO=ui.openNotes[task.id];
         h += `<div><div class="task-row" draggable="true" data-drag-id="${task.id}" data-drag-type="task" data-item-type="task">`;
         h += `<div class="checkbox" data-action="toggle-done" data-tid="${task.id}"></div>`;
-        h += `<span class="task-name">${esc(task.title)}</span>`;
+        h += editableSpan(task.title, task.id, 'task-name', 14);
         h += duePart(task, task.id, null);
         h += priorityDot(task.priority, task.id, null);
         h += `<button class="icon-btn" data-action="toggle-notes-panel" data-sid="${task.id}">${noteSvg(tn.length,13)}</button>`;
@@ -712,7 +760,7 @@ function render() {
   }
   h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button>${fileSyncBtn}</div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
-  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.2.0-beta.1</span></div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.3.0</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
@@ -742,6 +790,8 @@ document.getElementById("app").addEventListener("click", e => {
     }
     case "cancel-note": ui.notingId=null; render(); break;
     case "toggle-expand": ui.expandedNotes[nid]=!ui.expandedNotes[nid]; render(); break;
+    case "start-edit-title": ui.editingItemId=el.dataset.eid; render(); break;
+    case "start-edit-note": ui.editingNoteKey=`${el.dataset.enid}:${el.dataset.enidx}`; render(); break;
     case "toggle-notes-panel": ui.openNotes[el.dataset.sid]=!ui.openNotes[el.dataset.sid]; render(); break;
     case "pre-delete": ui.pendingDelete=el.dataset.delKey; render(); break;
     case "cancel-delete": ui.pendingDelete=null; render(); break;
@@ -870,6 +920,8 @@ document.getElementById("app").addEventListener("keydown", e => {
     if(r==="add-input") document.querySelector("[data-action='submit-add']")?.click();
     else if(r==="sub-input") document.querySelector(`[data-action='submit-sub'][data-pid='${e.target.dataset.pid}']`)?.click();
     else if(r==="note-input") document.querySelector(`[data-action='submit-note'][data-nid='${e.target.dataset.nid}']`)?.click();
+    else if(r==="edit-title") { e.preventDefault(); saveEditTitle(e.target); }
+    else if(r==="edit-note") { e.preventDefault(); saveEditNote(e.target); }
     else if(r==="capture-input") {
       const v=e.target.value.trim();
       if(v){state.tasks.push({id:gid(),type:"inbox",title:v});save();}
@@ -883,6 +935,8 @@ document.getElementById("app").addEventListener("keydown", e => {
     else if(r==="sub-input"){ui.addingSubTo=null;render();}
     else if(r==="note-input"){ui.notingId=null;render();}
     else if(r==="due-input"){ui.editingDue=null;render();}
+    else if(r==="edit-title"){ui.editingItemId=null;render();}
+    else if(r==="edit-note"){ui.editingNoteKey=null;render();}
   }
 });
 
@@ -893,6 +947,13 @@ document.addEventListener("keydown", e => {
   if (e.key==="i"||e.key==="I") { e.preventDefault(); document.querySelector(".capture-input")?.focus(); }
   if (e.key==="t") { ui.addMode="task"; ui.showList=true; render(); requestAnimationFrame(()=>document.querySelector("[data-role='add-input']")?.scrollIntoView({behavior:"smooth",block:"center"})); }
   if (e.key==="p") { ui.addMode="project"; ui.showList=true; render(); requestAnimationFrame(()=>document.querySelector("[data-role='add-input']")?.scrollIntoView({behavior:"smooth",block:"center"})); }
+});
+
+// ── Events: focusout (save on blur for inline editing) ──
+document.getElementById("app").addEventListener("focusout", e => {
+  const el=e.target;
+  if (el.dataset.role==="edit-title" && ui.editingItemId) { setTimeout(()=>{ if(ui.editingItemId) saveEditTitle(el); },0); }
+  if (el.dataset.role==="edit-note" && ui.editingNoteKey) { setTimeout(()=>{ if(ui.editingNoteKey) saveEditNote(el); },0); }
 });
 
 // ── Drag to reorder ──
