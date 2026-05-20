@@ -1,66 +1,103 @@
 # vp Vibepad
 
-A minimal, offline-first task manager built as a single-file PWA. No framework, no build step, no backend — just HTML, CSS, and vanilla JS stored in your browser.
+A simple, private task manager that runs entirely in your browser. Your data stays on your device — no accounts, no cloud, no sign-up.
 
 **[→ Open Vibepad](https://dsalfen.github.io/vibepad)**
 
 ---
 
-## Features
+## Getting started
 
-- **Quick capture** — press `I` anywhere to drop a thought into the inbox, then triage it later
-- **Projects & tasks** — organize work into projects with subtasks, or keep standalone tasks
-- **Priority levels** — click the dot on any item to cycle through high / med / low
-- **Due dates** — set deadlines; overdue items surface automatically in the flagged zone
-- **Flagged & overdue zone** — a focused view of what needs attention now
-- **Drag to reorder** — reorder tasks and subtasks, move tasks into projects, or pull subtasks out
-- **Notes** — add timestamped notes to any task, subtask, or flagged item
-- **Archive** — completed tasks and closed projects collected in a single dropdown, newest first
-- **Dark mode** — toggle in the header
-- **Keyboard shortcuts** — `i` capture · `t` add task · `p` add project
-- **Export / import** — back up and restore your data as JSON
-- **Installable PWA** — add to home screen on iOS or Android; works fully offline
+Just open the link above. That's it — Vibepad works immediately in any modern browser (Chrome, Safari, Edge, Firefox). There's nothing to install or configure.
 
-## Stack
+### Install on your phone or tablet
 
-| Concern | Approach |
-|---|---|
-| UI | String-rendered HTML, event delegation |
-| State | `localStorage` |
-| Offline | Service worker with stale-while-revalidate |
-| Fonts | DM Sans + DM Mono via Google Fonts |
-| Hosting | GitHub Pages |
+Vibepad works as a standalone app on your home screen:
 
-## Local development
+**iPhone / iPad:** Open the link in Safari → tap the Share button (square with arrow) → tap **Add to Home Screen**.
 
-A PowerShell dev server is included:
+**Android:** Open the link in Chrome → tap the three-dot menu → tap **Add to Home Screen** (or **Install app** if prompted).
 
-```powershell
-cd cockpit
-powershell -ExecutionPolicy Bypass -File serve.ps1
-# → http://localhost:8765
-```
+Once installed, it opens full-screen like a regular app and works offline.
 
-After editing `index.html`, clear the service worker cache in the browser console to see changes immediately:
+### Install on your computer
 
-```javascript
-(async()=>{const k=await caches.keys();await Promise.all(k.map(c=>caches.delete(c)));const r=await navigator.serviceWorker.getRegistrations();await Promise.all(r.map(x=>x.unregister()));location.reload()})()
-```
+In Chrome or Edge, open the link and look for the install icon (⊕) in the address bar, or go to the browser menu → **Install Vibepad**. It will open in its own window.
 
-## Deployment
+---
 
-Only `index.html` needs to be updated for a new release. All other files (`manifest.json`, `sw.js`, icons) are static.
+## How to use Vibepad
 
-## Files
+### Quick capture
 
-| File | Purpose |
-|------|---------|
-| `index.html` | The entire app — HTML, CSS, and JS in one file |
-| `manifest.json` | PWA manifest — tells browsers the app is installable |
-| `sw.js` | Service worker — enables offline use and caching |
-| `icon-192.png` | App icon |
-| `serve.ps1` | Local dev server (not needed for deployment) |
+The text box at the top is your inbox. Type a thought and press **Enter** — it drops into a list below the box. From there you can turn it into a task, file it into a project, or dismiss it. This is great for jotting things down fast without worrying about where they go yet.
+
+**Keyboard shortcut:** Press **I** from anywhere in the app to jump straight to the capture box.
+
+### Tasks
+
+Tasks are standalone to-do items. To create one, tap **+ Task** at the bottom (or press **T**). Check the box to mark it complete.
+
+Click on any task's name to **edit it** — just type your change and press Enter, or click away to save.
+
+### Projects
+
+Projects group related tasks together. Create one with **+ Project** (or press **P**), then add subtasks inside it using the **+ add subtask** link. When every subtask is done, a **✓ close** button appears to archive the whole project.
+
+Click on any project or subtask name to rename it.
+
+### Priority
+
+Every task and subtask has a small dot on the right side. Click it to cycle through priority levels: **high** (amber) → **medium** (blue) → **low** (green) → none. Priority is visual — it helps you scan your list, but doesn't change sort order.
+
+### Due dates
+
+Click **due** next to any item to set a deadline. Overdue items turn red and automatically appear in the Flagged & Overdue zone at the top, so they're hard to miss.
+
+### Flagging
+
+Click the flag icon on any task or subtask to pin it to the **Flagged & Overdue** zone. This is your "needs attention now" view. You can complete items directly from this zone, add notes, or unflag them when they're no longer urgent.
+
+### Notes
+
+Click the note icon (📄) on any item to expand its notes panel. Notes are timestamped and stack chronologically — useful for tracking status updates, decisions, or context over time. Click on any note's text to **edit it** — the timestamp will update to show when it was last changed.
+
+### Reordering
+
+Drag any task, project, or subtask to reorder it. You can also drag a standalone task onto a project to convert it into a subtask, or drag a subtask out of a project to make it standalone.
+
+### Archive
+
+Completed tasks and closed projects appear under the **closed & completed** toggle in the task list. You can reopen a closed project or un-check a completed task if you change your mind.
+
+### Dark mode
+
+Toggle dark mode with the sun/moon button in the top-right corner.
+
+---
+
+## Your data
+
+Vibepad stores everything in your browser's local storage. Nothing is sent to a server.
+
+### Back up your data
+
+Tap **export** at the bottom of the app to download a `.json` file with all your tasks, projects, and notes. Keep this somewhere safe.
+
+### Restore from backup
+
+Tap **import** and select a previously exported `.json` file. This replaces your current data with the file's contents.
+
+### Sync to a file (desktop Chrome only)
+
+On desktop Chrome, you can tap **sync to file** to link Vibepad to a `.json` file on your computer. Changes save to that file automatically. This is useful if you want to back up continuously or sync between browsers via a shared folder (like OneDrive or Dropbox).
+
+### Important
+
+Because your data lives in the browser, clearing your browser data or using a different browser means starting fresh. **Export regularly** if your tasks matter to you.
+
+---
 
 ## Version
 
-`v0.2.0-beta.1`
+`v0.3.0`
