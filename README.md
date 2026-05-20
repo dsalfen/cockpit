@@ -58,6 +58,8 @@ Click **due** next to any item to set a deadline. Overdue items turn red and aut
 
 Click the flag icon on any task or subtask to pin it to the **Flagged & Overdue** zone. This is your "needs attention now" view. You can complete items directly from this zone, add notes, or unflag them when they're no longer urgent.
 
+Each flagged item shows an **aging badge** — a small tag indicating how long since the item was last touched (e.g., "2h", "1d", "5d"). The badge color shifts from green (fresh, under 24 hours) to amber (aging, 1–3 days) to red (stale, 3+ days). "Touching" means adding or editing a note, editing the item's title, or re-flagging it. If you unflag and re-flag an item, the aging clock resets completely — it gets a fresh start.
+
 ### Notes
 
 Click the note icon (📄) on any item to expand its notes panel. Notes are timestamped and stack chronologically — useful for tracking status updates, decisions, or context over time. Click on any note's text to **edit it** — the timestamp will update to show when it was last changed.
@@ -100,4 +102,4 @@ Because your data lives in the browser, clearing your browser data or using a di
 
 ## Version
 
-`v0.3.0`
+`v0.3.1`
