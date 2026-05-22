@@ -90,6 +90,12 @@ html, body { height: 100%; }
 body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
 #app { max-width: 540px; margin: 0 auto; padding: 20px 16px 40px; }
 
+/* === Window Controls Overlay (installed PWA, desktop) === */
+@media (display-mode: window-controls-overlay) {
+  body { -webkit-app-region: drag; app-region: drag; padding-top: env(titlebar-area-height, 0px); }
+  #app > * { -webkit-app-region: no-drag; app-region: no-drag; }
+}
+
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 2px; }
 .header-title { display: flex; align-items: center; gap: 9px; }
 .header-wordmark { font-size: 16px; font-weight: 600; color: var(--text-secondary); letter-spacing: -0.01em; }
@@ -788,7 +794,7 @@ function render() {
   }
   h += `<div class="data-bar"><button class="data-btn" data-action="export-data">export</button><button class="data-btn" data-action="import-data">import</button>${fileSyncBtn}</div>`;
   h += `<div class="kbd-hint">i — capture &nbsp; t — task / subtask &nbsp; p — project</div>`;
-  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.3.2</span></div>`;
+  h += `<div class="app-footer"><a class="footer-link" href="https://github.com/dsalfen/vibepad" target="_blank" rel="noopener">dsalfen/vibepad</a><span class="footer-version">v0.4.0</span></div>`;
 
   document.getElementById("app").innerHTML = h;
   requestAnimationFrame(() => { const f=document.querySelector("[autofocus]"); if(f)f.focus(); });
