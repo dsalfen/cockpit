@@ -76,6 +76,10 @@ Completed tasks and closed projects appear under the **closed & completed** togg
 
 Toggle dark mode with the sun/moon button in the top-right corner.
 
+### Frameless window (desktop PWA only)
+
+When installed as a desktop PWA in Chrome or Edge, Vibepad removes the browser's title bar and runs in a clean, frameless window. The close/minimize/maximize buttons still appear as a small overlay in the corner, but everything else is your content. You can move the window by dragging any empty background area (the space between and around the cards). This only applies when installed as an app — in a regular browser tab, everything looks normal.
+
 ---
 
 ## Your data
@@ -102,4 +106,4 @@ Because your data lives in the browser, clearing your browser data or using a di
 
 ## Version
 
-`v0.3.2`
+`v0.4.0`
